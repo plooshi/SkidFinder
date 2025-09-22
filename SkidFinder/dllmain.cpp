@@ -24,7 +24,7 @@ uint64 KickPlayer()
         ).Get();
     }
 
-    if (FNVer >= 8.00 || FNVer <= 12.20) {
+    if (FNVer >= 7.00 || FNVer <= 15.50) {
         return Memcury::Scanner::FindPattern(
             "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC ? 49 8B F0 48 8B DA 48 85 D2"
         ).Get();
@@ -263,7 +263,7 @@ DWORD Main(LPVOID hModule) {
         for (int i = 0; i < 400; i++) {
             auto Ptr = (uint8_t*)(GetNetMode + i);
 
-            if (*Ptr == 0xe8 && *(Ptr - 1) != 0x8b) {
+            if (*Ptr == 0xe8 && *(Ptr - 1) != 0x8b && *(Ptr - 1) != 0xe7) {
                 GetNetMode = uint64_t(Ptr);
                 break;
             }
@@ -338,7 +338,10 @@ DWORD Main(LPVOID hModule) {
             ServerReplicateActorsVft = 0x5f;
         break;
     case 19:
-        ServerReplicateActorsVft = 0x66;
+        if (FNVer >= 19.2)
+            ServerReplicateActorsVft = 0x65;
+        else
+            ServerReplicateActorsVft = 0x66;
         break;
     }
     if (ServerReplicateActorsVft) {
@@ -387,7 +390,18 @@ DWORD Main(LPVOID hModule) {
     uint64_t StaticFindObject;
     if (FNVer >= 19) {
         StaticFindObject = Memcury::Scanner::FindPattern("40 55 53 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 45 33 F6 4C 8B E1 45 0F B6 E9 49 8B F8 41 8B C6", false).Get();
-        if (!StaticFindObject) StaticFindObject = Memcury::Scanner::FindPattern("48 89 5C 24 ? 48 89 74 24 ? 4C 89 64 24 ? 55 41 55 41 57 48 8B EC 48 83 EC 60 45 8A E1 4C 8B E9 48 83 FA").Get();
+        if (!StaticFindObject)
+        {
+            StaticFindObject = Memcury::Scanner::FindPattern("48 89 5C 24 ? 48 89 74 24 ? 4C 89 64 24 ? 55 41 55 41 57 48 8B EC 48 83 EC 60 45 8A E1 4C 8B E9 48 83 FA").Get();
+
+            if (!StaticFindObject)
+            {
+                StaticFindObject = Memcury::Scanner::FindPattern("48 89 5C 24 ? 48 89 74 24 ? 4C 89 64 24 ? 55 41 55 41 57 48 8B EC 48 83 EC 50 4C 8B E9").Get();
+
+                if (!StaticFindObject)
+                    StaticFindObject = Memcury::Scanner::FindPattern("48 89 5C 24 ? 48 89 7C 24 ? 4C 89 64 24 ? 55 41 56 41 57 48 8B EC 48 83 EC 60 33 FF 4C 8B E1 48 8D 4D E8 45 8A").Get();
+            }
+        }
     }
     else if (FNVer >= 16.00) {
         if (floor(FNVer) == 18)
@@ -503,7 +517,11 @@ _End:
     }
     AddOffset(EncryptionPatch);
 
-    if (FNVer == 0) NullFuncs.push_back(Memcury::Scanner::FindPattern("48 89 54 24 ? 48 89 4C 24 ? 55 53 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 8B 41 08 C1 E8 05").Get());
+    if (FNVer == 0)
+    {
+        NullFuncs.push_back(Memcury::Scanner::FindPattern("48 89 54 24 ? 48 89 4C 24 ? 55 53 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 8B 41 08 C1 E8 05").Get());
+        NullFuncs.push_back(Memcury::Scanner::FindPattern("48 89 54 24 ? 48 89 4C 24 ? 55 53 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 8B 41 ? C1 E8 ? A8 ? 0F 84 ? ? ? ? 80 3D").Get());
+    }
     else if (FNVer >= 3.3 && FNVer <= 4.5) {
         if (FNVer == 4.1) NullFuncs.push_back(Memcury::Scanner::FindPattern("4C 8B DC 55 49 8D AB ? ? ? ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 49 89 5B 10 48 8D 05 ? ? ? ? 48 8B 1D ? ? ? ? 49 89 73 18 33 F6 40").Get());
         NullFuncs.push_back(Memcury::Scanner::FindPattern("48 8B C4 57 48 81 EC ? ? ? ? 4C 8B 82 ? ? ? ? 48 8B F9 0F 29 70 E8 0F 29 78 D8").Get());
